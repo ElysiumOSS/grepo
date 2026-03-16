@@ -1,1 +1,3 @@
-npx lint-staged
+bun scripts/copyright.gen.ts
+git add -u
+bunx lint-staged

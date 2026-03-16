@@ -1,20 +1,40 @@
+/**
+ *
+ * Copyright 2026 Mike Odnis
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 import { GoogleGenAI, type Model } from "@google/genai";
+import { Schema } from "effect";
 
 import { Logger } from "./logger.js";
 import { ApiError } from "./validation.js";
 
-export interface GenerationOptions {
-	model?: string;
-	temperature?: number;
-	topK?: number;
-	topP?: number;
-}
+export const GenerationOptions = Schema.Struct({
+	model: Schema.optional(Schema.String),
+	temperature: Schema.optional(Schema.Number),
+	topK: Schema.optional(Schema.Number),
+	topP: Schema.optional(Schema.Number),
+});
+export type GenerationOptions = Schema.Schema.Type<typeof GenerationOptions>;
 
 export class GeminiService {
 	private readonly genAI: GoogleGenAI;
 	private readonly logger: Logger;
 
-	constructor(private readonly apiKey: string) {
+	constructor(apiKey: string) {
 		this.genAI = new GoogleGenAI({ apiKey });
 		this.logger = new Logger("GeminiService");
 	}
@@ -37,7 +57,7 @@ export class GeminiService {
 				.filter(
 					(m) => m.name && m.supportedActions?.includes("generateContent"),
 				)
-				.map((m) => m.name!.replace("models/", ""));
+				.map((m) => (m.name ?? "").replace("models/", ""));
 
 			this.cachedModels = names;
 			return names;
@@ -51,7 +71,7 @@ export class GeminiService {
 	}
 
 	private parseModelVersion(name: string): number {
-		const match = name.match(/(\d+)\.(\d+)/);
+		const match = /(\d+)\.(\d+)/.exec(name);
 		if (!match) {
 			return 0;
 		}
@@ -120,7 +140,8 @@ export class GeminiService {
 		const models = await this.getModelFallbackChain(options.model);
 
 		for (let i = 0; i < models.length; i++) {
-			const modelName = models[i]!;
+			const modelName = models[i];
+			if (!modelName) continue;
 			try {
 				const result = await this.genAI.models.generateContent({
 					contents: [{ parts: [{ text: prompt }], role: "user" }],
@@ -139,8 +160,8 @@ export class GeminiService {
 
 				return text;
 			} catch (error) {
-				if (this.isRateLimitError(error) && i < models.length - 1) {
-					const nextModel = models[i + 1]!;
+				const nextModel = models[i + 1];
+				if (this.isRateLimitError(error) && nextModel) {
 					this.logger.warn(
 						`Rate limited on ${modelName}, falling back to ${nextModel}`,
 					);

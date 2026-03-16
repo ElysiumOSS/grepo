@@ -1,5 +1,23 @@
-import { readFileSync, existsSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+/**
+ *
+ * Copyright 2026 Mike Odnis
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+import { existsSync, readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Schema } from "effect";
 
@@ -31,21 +49,24 @@ export const DocumentationStyle = Schema.Literal(
 );
 export type DocumentationStyle = Schema.Schema.Type<typeof DocumentationStyle>;
 
-export interface GrepoConfig {
-	branch: string;
-	command: Command;
-	geminiApiKey: string;
-	githubToken?: string;
-	isDryRun: boolean;
-	outputFile: string;
-	outputFormat: OutputFormat;
-	repoUrl: string;
-	shouldApply: boolean;
-	shouldMerge: boolean;
-	shouldPush: boolean;
-	style: DocumentationStyle;
-	tone?: "casual" | "minimal" | "professional" | "technical";
-}
+export const GrepoConfig = Schema.Struct({
+	branch: Schema.String,
+	command: Command,
+	geminiApiKey: Schema.String,
+	githubToken: Schema.optional(Schema.String),
+	isDryRun: Schema.Boolean,
+	outputFile: Schema.String,
+	outputFormat: OutputFormat,
+	repoUrl: Schema.String,
+	shouldApply: Schema.Boolean,
+	shouldMerge: Schema.Boolean,
+	shouldPush: Schema.Boolean,
+	style: DocumentationStyle,
+	tone: Schema.optional(
+		Schema.Literal("casual", "minimal", "professional", "technical"),
+	),
+});
+export type GrepoConfig = Schema.Schema.Type<typeof GrepoConfig>;
 
 // ============================================================================
 // Env Loading
@@ -71,7 +92,7 @@ export async function loadEnv(): Promise<void> {
 			const value = valueParts
 				.join("=")
 				.trim()
-				.replace(/(^["'])|(['"]$)/g, "");
+				.replaceAll(/(^["'])|(['"]$)/g, "");
 			if (!process.env[key.trim()]) {
 				process.env[key.trim()] = value;
 			}
@@ -144,7 +165,7 @@ export function buildConfig(argv: string[]): GrepoConfig {
 		process.exit(1);
 	}
 
-	const repoUrl = positional[1] as string;
+	const repoUrl = positional[1];
 	if (!validation.isValidGitHubUrl(repoUrl)) {
 		throw new GrepoValidationError({
 			field: "repoUrl",

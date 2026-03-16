@@ -38,7 +38,7 @@ const FORMAT_TYPES = [
 	{ regex: /\.sh$/, header: "#", body: "", footer: "" },
 ] as const satisfies FormatType[];
 const COPYRIGHT = ` 
- Copyright ${new Date().getFullYear()} GDG on Campus Farmingdale State College
+ Copyright ${new Date().getFullYear()} Mike Odnis
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -78,7 +78,7 @@ const getSourceFilesToUpdate = async () => {
 		await Promise.all(
 			paths.map(async (path) => ((await fileExists(path)) ? path : null)),
 		)
-	).filter((path) => path !== null) as string[];
+	).filter((path) => path !== null);
 
 	const fileContents = await Promise.all(
 		existingPaths.map((path) => readFile(path, { encoding: "utf-8" })),
@@ -101,35 +101,43 @@ const updateContent = (content: string, format: FormatType): string => {
 		.map((l) => format.body + l)
 		.join("\n");
 	const footer = format.footer ? `\n${format.footer}` : "";
+	const copyrightBlock = `${header}${body}${footer}`;
 
-	return `${header}${body}${footer}\n\n${content}`;
+	// Preserve shebang lines — they must stay on line 1
+	if (content.startsWith("#!")) {
+		const newlineIdx = content.indexOf("\n");
+		const shebang = content.slice(0, newlineIdx + 1);
+		const rest = content.slice(newlineIdx + 1);
+		return `${shebang}${copyrightBlock}\n\n${rest}`;
+	}
+
+	return `${copyrightBlock}\n\n${content}`;
 };
 
 console.log("Checking copyright in sources...");
 
-(async () => {
-	const missing = await getSourceFilesToUpdate();
-	if (process.argv[2] === "--check") {
-		if (missing.length) {
-			console.error(
-				`Copyright header missing in ${missing.map(({ path }) => path).join(", ")}`,
-			);
-			console.error("Run `pnpm run format` at root to update");
-			process.exit(1);
-		}
-		console.log("Copyright headers okay");
-		process.exit(0);
+const missing = await getSourceFilesToUpdate();
+if (process.argv[2] === "--check") {
+	if (missing.length) {
+		console.error(
+			`Copyright header missing in ${missing.map(({ path }) => path).join(", ")}`,
+		);
+		console.error("Run `bun run format` at root to update");
+		process.exit(1);
 	}
-	writeFile;
-	const updated = missing.map((m) => {
-		m.contents = updateContent(m.contents, m.format!);
-		return m;
-	});
+	console.log("Copyright headers okay");
+	process.exit(0);
+}
+const updated = missing.map((m) => {
+	if (m.format) {
+		m.contents = updateContent(m.contents, m.format);
+	}
+	return m;
+});
 
-	await Promise.all(
-		updated.map(({ path, contents }) =>
-			writeFile(path, contents, { encoding: "utf-8" }),
-		),
-	);
-	console.log(`Updated copyright headers in ${updated.length} files`);
-})();
+await Promise.all(
+	updated.map(({ path, contents }) =>
+		writeFile(path, contents, { encoding: "utf-8" }),
+	),
+);
+console.log(`Updated copyright headers in ${updated.length} files`);

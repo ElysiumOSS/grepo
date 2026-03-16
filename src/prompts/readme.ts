@@ -1,53 +1,101 @@
+/**
+ *
+ * Copyright 2026 Mike Odnis
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+import { Schema } from "effect";
+
 import type { DocumentationStyle } from "../config.js";
 import { Logger } from "../utils/logger.js";
 
 // ============================================================================
-// Types & Interfaces
+// Types & Schemas
 // ============================================================================
 
-export interface AnalysisResult {
-	diagrams: Array<{
-		keyNodes: string[];
-		purpose: string;
-		scope: string;
-		type: "c4-context" | "er" | "flowchart" | "sequence" | "state";
-	}>;
-	existingReadme: {
-		improve: string[];
-		missing: string[];
-		preserve: string[];
-		quality: "decent" | "good" | "none" | "poor";
-	};
-	identity: { differentiators: string[]; name: string; oneLiner: string };
-	repoType: string;
-	sections: {
-		recommended: string[];
-		skip: Array<{ reason: string; section: string }>;
-	};
-	tone: {
-		detected: "casual" | "minimal" | "professional" | "technical";
-		evidence: string;
-	};
-}
+export const DiagramSchema = Schema.Struct({
+	keyNodes: Schema.Array(Schema.String),
+	purpose: Schema.String,
+	scope: Schema.String,
+	type: Schema.Literal("c4-context", "er", "flowchart", "sequence", "state"),
+});
 
-export type Tone = "casual" | "minimal" | "professional" | "technical";
+export const ExistingReadmeSchema = Schema.Struct({
+	improve: Schema.Array(Schema.String),
+	missing: Schema.Array(Schema.String),
+	preserve: Schema.Array(Schema.String),
+	quality: Schema.Literal("decent", "good", "none", "poor"),
+});
 
-export interface GenerationOptions {
-	format: "md" | "mdx";
-	style: DocumentationStyle;
-	tone?: Tone;
-}
+export const IdentitySchema = Schema.Struct({
+	differentiators: Schema.Array(Schema.String),
+	name: Schema.String,
+	oneLiner: Schema.String,
+});
+
+export const SectionsSchema = Schema.Struct({
+	recommended: Schema.Array(Schema.String),
+	skip: Schema.Array(
+		Schema.Struct({
+			reason: Schema.String,
+			section: Schema.String,
+		}),
+	),
+});
+
+export const ToneSchema = Schema.Literal(
+	"casual",
+	"minimal",
+	"professional",
+	"technical",
+);
+export type Tone = Schema.Schema.Type<typeof ToneSchema>;
+
+export const ToneDetectionSchema = Schema.Struct({
+	detected: ToneSchema,
+	evidence: Schema.String,
+});
+
+export const AnalysisResult = Schema.Struct({
+	diagrams: Schema.Array(DiagramSchema),
+	existingReadme: ExistingReadmeSchema,
+	identity: IdentitySchema,
+	repoType: Schema.String,
+	sections: SectionsSchema,
+	tone: ToneDetectionSchema,
+});
+export type AnalysisResult = Schema.Schema.Type<typeof AnalysisResult>;
+
+export const GenerationOptions = Schema.Struct({
+	format: Schema.Literal("md", "mdx"),
+	style: Schema.Literal("minimal", "standard", "comprehensive"),
+	tone: Schema.optional(ToneSchema),
+});
+export type GenerationOptions = Schema.Schema.Type<typeof GenerationOptions>;
 
 // ============================================================================
-// Repo Data type
+// Repo Data Schema
 // ============================================================================
 
-export interface RepoData {
-	content: string;
-	repo_url: string;
-	summary: string;
-	tree: string;
-}
+export const RepoData = Schema.Struct({
+	content: Schema.String,
+	repo_url: Schema.String,
+	summary: Schema.String,
+	tree: Schema.String,
+});
+export type RepoData = Schema.Schema.Type<typeof RepoData>;
 
 // ============================================================================
 // Default Fallback
@@ -107,18 +155,14 @@ export function parseAnalysis(raw: string): AnalysisResult {
 			.replace(/\s*```\s*$/, "")
 			.trim();
 
-		const parsed = JSON.parse(stripped) as Partial<AnalysisResult>;
+		const json = JSON.parse(stripped) as unknown;
+		const result = Schema.decodeUnknownSync(AnalysisResult)(json);
 
-		if (
-			!parsed.repoType ||
-			!parsed.identity?.name ||
-			!parsed.tone?.detected ||
-			!parsed.sections?.recommended?.length
-		) {
-			throw new Error("Missing required fields in analysis JSON");
+		if (!result.sections.recommended.length) {
+			throw new Error("sections.recommended must not be empty");
 		}
 
-		return parsed as AnalysisResult;
+		return result;
 	} catch (err) {
 		const logger = new Logger("GREPO:README-PROMPT");
 		logger.warn(

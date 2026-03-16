@@ -1,9 +1,27 @@
+/**
+ *
+ * Copyright 2026 Mike Odnis
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 import { execFile } from "node:child_process";
-import { writeFile, mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
-import { Effect } from "effect";
+import { Effect, Schema } from "effect";
 
 import type { GeminiServiceApi } from "./services.js";
 import { Logger } from "./utils/logger.js";
@@ -11,20 +29,24 @@ import { Logger } from "./utils/logger.js";
 const execFileAsync = promisify(execFile);
 const logger = new Logger("GREPO:MERMAID");
 
-interface MermaidBlock {
-	code: string;
-	end: number;
-	index: number;
-	start: number;
-}
+export const MermaidBlock = Schema.Struct({
+	code: Schema.String,
+	end: Schema.Number,
+	index: Schema.Number,
+	start: Schema.Number,
+});
+export type MermaidBlock = Schema.Schema.Type<typeof MermaidBlock>;
 
 export function extractMermaidBlocks(markdown: string): MermaidBlock[] {
 	const blocks: MermaidBlock[] = [];
 	const regex = /```mermaid\n([\s\S]*?)```/g;
-	let match: RegExpExecArray | null;
 	let index = 0;
 
-	while ((match = regex.exec(markdown)) !== null) {
+	for (
+		let match = regex.exec(markdown);
+		match !== null;
+		match = regex.exec(markdown)
+	) {
 		blocks.push({
 			code: match[1].trim(),
 			end: match.index + match[0].length,

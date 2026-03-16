@@ -1,3 +1,21 @@
+/**
+ *
+ * Copyright 2026 Mike Odnis
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 import {
 	HttpClient,
 	HttpClientRequest,
@@ -49,7 +67,7 @@ const safeStringify = (error: unknown): string => {
 		return error.message;
 	}
 	try {
-		return JSON.stringify(error);
+		return JSON.stringify(error) ?? String(error);
 	} catch {
 		return String(error);
 	}
@@ -311,7 +329,7 @@ export function fetcher<T = unknown>(
 				const textBody =
 					typeof body === "object" && body !== null
 						? JSON.stringify(body)
-						: String(body);
+						: String(body ?? "");
 				req = HttpClientRequest.bodyText(textBody)(req);
 			} else {
 				req = yield* pipe(
@@ -373,7 +391,7 @@ export function fetcher<T = unknown>(
 					return Effect.fail(error);
 				}
 				const fetcherError = new FetcherError(
-					String(error),
+					safeStringify(error),
 					url,
 					undefined,
 					undefined,

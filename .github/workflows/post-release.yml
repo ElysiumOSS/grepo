@@ -14,8 +14,8 @@ jobs:
 
             The release is available on:
 
-            * [GitHub releases](https://github.com/ElysiumOSS/package-template/releases/tag/{release_tag})
-            * [npm package (@latest dist-tag)](https://www.npmjs.com/package/package-template/v/${{ env.npm_version }})
+            * [GitHub releases](https://github.com/ElysiumOSS/grepo/releases/tag/{release_tag})
+            * [npm package (@latest dist-tag)](https://www.npmjs.com/package/@elysiumoss/grepo/v/${{ env.npm_version }})
 
             Cheers! 📦🚀
 

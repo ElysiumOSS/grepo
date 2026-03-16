@@ -1,0 +1,28 @@
+{
+	"$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+	"files": {
+		"includes": [
+			"**",
+			"!coverage",
+			"!lib",
+			"!node_modules",
+			"!pnpm-lock.yaml",
+			"!bun.lock"
+		]
+	},
+	"formatter": {
+		"indentStyle": "tab"
+	},
+	"linter": {
+		"rules": {
+			"recommended": true
+		}
+	},
+	"assist": {
+		"actions": {
+			"source": {
+				"organizeImports": "on"
+			}
+		}
+	}
+}
