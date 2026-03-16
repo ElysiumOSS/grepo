@@ -1,0 +1,100 @@
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/prepare
+      - run: pnpm build
+      - run: node lib/index.js
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/prepare
+      - run: pnpm lint
+
+  lint_knip:
+    name: Lint Knip
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/prepare
+      - run: pnpm lint:knip
+
+  lint_markdown:
+    name: Lint Markdown
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/prepare
+      - run: pnpm lint:md
+
+  lint_packages:
+    name: Lint Packages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/prepare
+      - run: pnpm lint:packages
+
+  lint_spelling:
+    name: Lint Spelling
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/prepare
+      - name: Run cspell and add unknown words
+        run: |
+          npx cspell --no-progress . | tee cspell-output.txt
+          awk -F' - Unknown word \(' '/Unknown word/ {print $2}' cspell-output.txt | sed 's/)//' | sort -u > cspell-unknown-words.txt
+          if [ -s cspell-unknown-words.txt ]; then
+            if [ ! -f cspell.json ]; then
+              echo '{ "words": [] }' > cspell.json
+            fi
+            node -e "const fs = require('fs'); const path = 'cspell.json'; const words = fs.existsSync(path) ? JSON.parse(fs.readFileSync(path)).words || [] : []; const newWords = fs.readFileSync('cspell-unknown-words.txt', 'utf8').split('\n').filter(Boolean); const merged = Array.from(new Set([...words, ...newWords])).sort(); const json = fs.existsSync(path) ? JSON.parse(fs.readFileSync(path)) : {}; json.words = merged; fs.writeFileSync(path, JSON.stringify(json, null, 2));"
+            echo "Added unknown words to cspell.json:"
+            cat cspell-unknown-words.txt
+          else
+            echo "No unknown words found by cspell."
+          fi
+      - run: pnpm lint:spelling
+
+  prettier:
+    name: Prettier
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/prepare
+      - run: pnpm format --list-different
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/prepare
+      - run: pnpm run test --coverage
+      - if: always()
+        name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+
+  type_check:
+    name: Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/prepare
+      - run: pnpm tsc
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: read

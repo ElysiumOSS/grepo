@@ -1,0 +1,47 @@
+{
+  "badgeTemplate": "\t<a href=\"#contributors\" target=\"_blank\"><img alt=\"👪 All Contributors: <%= contributors.length %>\" src=\"https://img.shields.io/badge/%F0%9F%91%AA_all_contributors-<%= contributors.length %>-21bb42.svg\" /></a>",
+  "commitType": "docs",
+  "contributors": [
+    {
+      "avatar_url": "https://avatars.githubusercontent.com/u/95197809?v=4",
+      "contributions": [
+        "code",
+        "content",
+        "doc",
+        "ideas",
+        "infra",
+        "maintenance",
+        "projectManagement",
+        "tool"
+      ],
+      "login": "WomB0ComB0",
+      "name": "Mike Odnis",
+      "profile": "https://linktr.ee/mikeodnis"
+    },
+    {
+      "login": "ElysiumOSS",
+      "name": "Elysium Open Source",
+      "avatar_url": "https://avatars.githubusercontent.com/u/155137850?v=4",
+      "profile": "https://github.com/ElysiumOSS",
+      "contributions": [
+        "code",
+        "content",
+        "doc",
+        "ideas",
+        "infra",
+        "maintenance",
+        "projectManagement",
+        "tool"
+      ]
+    }
+  ],
+  "contributorsPerLine": 7,
+  "contributorsSortAlphabetically": true,
+  "files": [
+    "README.md"
+  ],
+  "projectName": "package-template",
+  "projectOwner": "ElysiumOSS",
+  "repoType": "github",
+  "commitConvention": "angular"
+}

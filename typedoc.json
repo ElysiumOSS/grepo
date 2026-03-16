@@ -1,0 +1,28 @@
+{
+	"$schema": "https://typedoc-plugin-markdown.org/schema.json",
+	"plugin": ["typedoc-plugin-markdown", "typedoc-github-wiki-theme"],
+	"entryPoints": ["src/*"],
+	"tsconfig": "tsconfig.app.json",
+	"out": "./docs",
+	"exclude": [
+		"**/*.cy.ts",
+		"**/*.test.ts",
+		"**/*.test.tsx",
+		"**/*.*spec*.ts",
+		"**/*.*spec*.tsx",
+		"**/*.stories.ts",
+		"**/*.stories.tsx"
+	],
+	"readme": "README.md",
+	"hideBreadcrumbs": false,
+	"hidePageTitle": false,
+	"hideInPageTOC": false,
+	"hideMembersSymbol": false,
+	"sort": ["source-order"],
+	"includeVersion": true,
+	"gitRevision": "master",
+	"toc": ["modules", "classes", "interfaces", "enums", "functions", "types"],
+	"namedAnchors": true,
+	"publicPath": "/docs/",
+	"cleanOutputDir": true
+}
