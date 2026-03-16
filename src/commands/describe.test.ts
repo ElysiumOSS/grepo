@@ -130,7 +130,7 @@ describe("describe command", () => {
 		await Effect.runPromise(run(config).pipe(Effect.provide(layer)));
 
 		expect(updateRepoFn).toHaveBeenCalled();
-		const data = updateRepoFn.mock.calls[0]?.[2] as {
+		const data = (updateRepoFn.mock.calls[0] as unknown[])?.[2] as {
 			description?: string;
 		};
 		expect(data.description).toBe("A cool CLI");
@@ -146,7 +146,7 @@ describe("describe command", () => {
 
 		await Effect.runPromise(run(config).pipe(Effect.provide(layer)));
 
-		const data = updateRepoFn.mock.calls[0]?.[2] as {
+		const data = (updateRepoFn.mock.calls[0] as unknown[])?.[2] as {
 			homepage?: string;
 		};
 		expect(data.homepage).toBe("https://docs.example.com");

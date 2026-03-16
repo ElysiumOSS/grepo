@@ -1,10 +1,13 @@
 # Multi-Model Provider Support Implementation Plan
 
-> **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan.
+> Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Replace the Gemini-only AI backend with a multi-provider system supporting Gemini, OpenAI, Anthropic, Groq, and Ollama via the Vercel AI SDK.
 
-**Architecture:** A prefix-based router (`gemini-*`, `gpt-*`, `claude-*`, `groq-*`, `ollama-*`) resolves model IDs to Vercel AI SDK provider instances. A dynamic fallback chain rotates through all available models across providers on rate limits. Config file at `~/.config/grepo/config.json` stores API keys and default model, with env var overrides.
+**Architecture:** A prefix-based router (`gemini-*`, `gpt-*`, `claude-*`, `groq-*`, `ollama-*`) resolves model IDs to Vercel AI SDK provider instances.
+A dynamic fallback chain rotates through all available models across providers on rate limits.
+Config file at `~/.config/grepo/config.json` stores API keys and default model, with env var overrides.
 
 **Tech Stack:** Vercel AI SDK (`ai`, `@ai-sdk/google`, `@ai-sdk/openai`, `@ai-sdk/anthropic`, `ollama-ai-provider`), Effect (existing), TypeScript
 
@@ -1023,7 +1026,8 @@ In `buildConfig()`, after API key validation, add:
 
 And in the return object, add `model`.
 
-Remove the hard requirement for `geminiApiKey` — instead validate that the resolved model's provider has a key. Keep `geminiApiKey` populated for backwards compat.
+Remove the hard requirement for `geminiApiKey` — instead validate that the resolved model's provider has a key.
+Keep `geminiApiKey` populated for backwards compat.
 
 - [ ] **Step 4: Run tests**
 
@@ -1249,7 +1253,7 @@ git commit -m "refactor: export new AI types, remove old GeminiService"
 - [ ] **Step 1: Add --model to USAGE string in config.ts**
 
 Add after the `--tone` line:
-```
+```text
   --model <id>               AI model (e.g. gemini-2.0-flash, gpt-4o, claude-sonnet-4-20250514)
 ```
 

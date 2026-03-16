@@ -115,7 +115,9 @@ describe("topics command", () => {
 
 		await Effect.runPromise(run(config).pipe(Effect.provide(layer)));
 
-		const calledTopics = setTopicsFn.mock.calls[0]?.[2] as string[];
+		const calledTopics = (
+			setTopicsFn.mock.calls[0] as unknown[]
+		)?.[2] as string[];
 		expect(calledTopics).toContain("type-script");
 		expect(calledTopics).toContain("cli-tool");
 	});
@@ -131,7 +133,9 @@ describe("topics command", () => {
 		await Effect.runPromise(run(config).pipe(Effect.provide(layer)));
 
 		expect(setTopicsFn).toHaveBeenCalled();
-		const calledTopics = setTopicsFn.mock.calls[0]?.[2] as string[];
+		const calledTopics = (
+			setTopicsFn.mock.calls[0] as unknown[]
+		)?.[2] as string[];
 		expect(calledTopics).toContain("existing-topic");
 		expect(calledTopics).toContain("new-topic");
 	});

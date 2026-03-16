@@ -5,7 +5,8 @@
 
 ## Overview
 
-Add support for multiple AI providers (Gemini, OpenAI, Anthropic, Groq, Ollama) via the Vercel AI SDK, replacing the Gemini-only architecture. Models are selected by prefix-based routing, with automatic cross-provider fallback on rate limits.
+Add support for multiple AI providers (Gemini, OpenAI, Anthropic, Groq, Ollama) via the Vercel AI SDK, replacing the Gemini-only architecture.
+Models are selected by prefix-based routing, with automatic cross-provider fallback on rate limits.
 
 ## Providers
 
@@ -43,7 +44,9 @@ Location: `~/.config/grepo/config.json`
 
 ## Fallback Chain
 
-Built dynamically at startup from all configured providers. Each provider's available models are fetched via SDK or curated registry. Models ranked by tier (cheap/fast → expensive/powerful) across all providers.
+Built dynamically at startup from all configured providers.
+Each provider's available models are fetched via SDK or curated registry.
+Models ranked by tier (cheap/fast → expensive/powerful) across all providers.
 
 On rate limit or failure, rotates to the next model in the chain — may cross provider boundaries.
 
@@ -63,9 +66,12 @@ Example with Gemini + OpenAI keys:
 - `src/utils/ollama.ts` — Ollama model discovery
 
 ### Modified Files
-- `src/services.ts` — New `AI` Effect tag + `AILive` layer replacing `Gemini`/`GeminiLive`. Old names kept as deprecated re-exports.
-- `src/errors.ts` — New `AIError` tagged error with `provider` and `model` fields. `GeminiError` kept as deprecated re-export.
-- `src/config.ts` — Add `--model` CLI flag, replace `geminiApiKey` with `model: string` in `GrepoConfig`. Keep `geminiApiKey` as deprecated optional field.
+- `src/services.ts` — New `AI` Effect tag + `AILive` layer replacing `Gemini`/`GeminiLive`.
+  Old names kept as deprecated re-exports.
+- `src/errors.ts` — New `AIError` tagged error with `provider` and `model` fields.
+  `GeminiError` kept as deprecated re-export.
+- `src/config.ts` — Add `--model` CLI flag, replace `geminiApiKey` with `model: string` in `GrepoConfig`.
+  Keep `geminiApiKey` as deprecated optional field.
 - `src/cli.ts` — Use `AI`/`AILive` instead of `Gemini`/`GeminiLive`
 - `src/index.ts` — Export new types + deprecated re-exports
 - `src/commands/*.ts` — Change `Gemini` service dependency to `AI`

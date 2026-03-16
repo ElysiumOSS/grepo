@@ -5,21 +5,32 @@
 		".github",
 		"CHANGELOG.md",
 		"coverage",
+		"docs",
 		"lib",
 		"node_modules",
-		"pnpm-lock.yaml"
+		"bun.lock"
 	],
 	"words": [
+		"agentic",
+		"elysiumoss",
 		"Farmingdale",
+		"Groq",
 		"Odnis",
+		"Ollama",
 		"bunx",
 		"codegen",
 		"genai",
 		"gitingest",
 		"grepo",
+		"imagen",
 		"mermaid",
+		"millis",
+		"mkdocs",
 		"mmdc",
+		"octocat",
+		"ollama",
 		"subdirs",
+		"testtoken",
 		"tsdown"
 	]
 }
