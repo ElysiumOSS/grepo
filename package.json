@@ -1,17 +1,30 @@
 {
-	"name": "package-template",
-	"version": "0.0.0",
-	"description": "A very lovely package. Hooray!",
+	"name": "@elysiumoss/grepo",
+	"version": "0.1.0",
+	"description": "AI-powered GitHub repository management CLI — generate READMEs, topics, descriptions, and more using Gemini",
+	"keywords": [
+		"ai",
+		"cli",
+		"documentation",
+		"gemini",
+		"github",
+		"readme",
+		"repository"
+	],
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/ElysiumOSS/package-template.git"
+		"url": "git+https://github.com/ElysiumOSS/grepo.git"
 	},
 	"license": "MIT",
 	"author": {
-		"name": "womb0comb0"
+		"name": "Mike Odnis",
+		"url": "https://github.com/WomB0ComB0"
 	},
 	"type": "module",
 	"main": "lib/index.js",
+	"bin": {
+		"grepo": "lib/cli.js"
+	},
 	"files": [
 		"LICENSE.md",
 		"README.md",
@@ -20,7 +33,7 @@
 	],
 	"scripts": {
 		"build": "tsdown",
-		"docs": "pnpm dlx typedoc --en tryPointStrategy Expand src",
+		"docs": "pnpm dlx typedoc --entryPointStrategy Expand src",
 		"format": "prettier .",
 		"lint": "eslint . --max-warnings 0",
 		"lint:knip": "knip",
@@ -35,9 +48,10 @@
 		"*": "prettier --ignore-unknown --write"
 	},
 	"dependencies": {
+		"@effect/platform": "^0.94.2",
 		"@google/genai": "^1.22.0",
-		"@types/bun": "^1.2.23",
-		"type-fest": "^5.0.1"
+		"@mermaid-js/mermaid-cli": "^11.12.0",
+		"effect": "^3.19.15"
 	},
 	"devDependencies": {
 		"@eslint-community/eslint-plugin-eslint-comments": "4.5.0",

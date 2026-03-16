@@ -9,5 +9,17 @@
 		"node_modules",
 		"pnpm-lock.yaml"
 	],
-	"words": ["Farmingdale", "Odnis", "bunx", "codegen", "genai", "subdirs"]
+	"words": [
+		"Farmingdale",
+		"Odnis",
+		"bunx",
+		"codegen",
+		"genai",
+		"gitingest",
+		"grepo",
+		"mermaid",
+		"mmdc",
+		"subdirs",
+		"tsdown"
+	]
 }
