@@ -57,6 +57,10 @@ export const GeminiLive = (apiKey: string) =>
 // ============================================================================
 
 export interface GitHubServiceApi {
+	readonly getDefaultBranch: (
+		owner: string,
+		repo: string,
+	) => Effect.Effect<string, GitHubError>;
 	readonly getTopics: (
 		owner: string,
 		repo: string,
@@ -86,6 +90,15 @@ export class GitHub extends Context.Tag("GitHub")<GitHub, GitHubServiceApi>() {}
 export const GitHubLive = (token?: string) => {
 	const client = new GitHubClient(token);
 	return Layer.succeed(GitHub, {
+		getDefaultBranch: (owner, repo) =>
+			Effect.tryPromise({
+				catch: (error) =>
+					new GitHubError({
+						endpoint: `repos/${owner}/${repo}`,
+						message: error instanceof Error ? error.message : String(error),
+					}),
+				try: () => client.getDefaultBranch(owner, repo),
+			}),
 		getTopics: (owner, repo) =>
 			Effect.tryPromise({
 				catch: (error) =>

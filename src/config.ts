@@ -50,7 +50,7 @@ export const DocumentationStyle = Schema.Literal(
 export type DocumentationStyle = Schema.Schema.Type<typeof DocumentationStyle>;
 
 export const GrepoConfig = Schema.Struct({
-	branch: Schema.String,
+	branch: Schema.optional(Schema.String),
 	command: Command,
 	geminiApiKey: Schema.String,
 	githubToken: Schema.optional(Schema.String),
@@ -124,7 +124,7 @@ Options:
   --apply                      Apply changes to GitHub (topics, describe)
   --merge                      Merge with existing topics (topics only)
   --dry-run                    Preview changes without applying
-  --branch <name>              Target branch (default: main)
+  --branch <name>              Target branch (default: auto-detect from repo)
   --tone <voice>              Tone: casual, professional, minimal, technical (default: auto-detect)`;
 
 const VALID_TONES = ["casual", "professional", "minimal", "technical"] as const;
@@ -195,7 +195,7 @@ export function buildConfig(argv: string[]): GrepoConfig {
 
 	const format = (options.format as string) || "md";
 	return {
-		branch: (options.branch as string) || "main",
+		branch: (options.branch as string) || undefined,
 		command: command as Command,
 		geminiApiKey,
 		githubToken,

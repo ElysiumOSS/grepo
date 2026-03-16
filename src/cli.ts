@@ -52,7 +52,25 @@ Run 'grepo <command> --help' for more information.`);
 	process.exit(0);
 }
 
-const config = buildConfig(argv);
+const parsedConfig = buildConfig(argv);
+
+// Auto-detect default branch from GitHub API if not explicitly set
+let resolvedBranch = parsedConfig.branch;
+if (!resolvedBranch) {
+	try {
+		const { GitHubClient } = await import("./utils/github.js");
+		const { parseGitHubUrl } = await import("./utils/validation.js");
+		const { owner, repo } = parseGitHubUrl(parsedConfig.repoUrl);
+		const client = new GitHubClient(parsedConfig.githubToken);
+		resolvedBranch = await client.getDefaultBranch(owner, repo);
+		logger.info(`Detected default branch: ${resolvedBranch}`);
+	} catch {
+		resolvedBranch = "main";
+		logger.warn("Could not detect default branch, falling back to 'main'");
+	}
+}
+
+const config = { ...parsedConfig, branch: resolvedBranch };
 
 const layers = Layer.merge(
 	GeminiLive(config.geminiApiKey),

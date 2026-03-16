@@ -90,7 +90,7 @@ export const run = (config: GrepoConfig) =>
 				config.outputFile,
 				content,
 				"docs: update README with AI-generated content",
-				config.branch,
+				config.branch ?? "main",
 			);
 			logger.success("Pushed to GitHub successfully");
 		}

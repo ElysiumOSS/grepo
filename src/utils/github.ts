@@ -158,6 +158,22 @@ export class GitHubClient {
 		);
 	}
 
+	async getDefaultBranch(owner: string, repo: string): Promise<string> {
+		const RepoResponse = Schema.Struct({
+			default_branch: Schema.String,
+		});
+		const result = await Effect.runPromise(
+			Effect.provide(
+				get(`${GITHUB_API}/repos/${owner}/${repo}`, {
+					headers: this.headers,
+					schema: RepoResponse,
+				}),
+				FetchHttpClient.layer,
+			),
+		);
+		return result.default_branch;
+	}
+
 	async updateRepo(
 		owner: string,
 		repo: string,

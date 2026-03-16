@@ -39,7 +39,7 @@ describe("buildConfig", () => {
 		expect(config.repoUrl).toBe("https://github.com/owner/repo");
 		expect(config.outputFormat).toBe("md");
 		expect(config.style).toBe("standard");
-		expect(config.branch).toBe("main");
+		expect(config.branch).toBeUndefined();
 		expect(config.isDryRun).toBe(false);
 		expect(config.shouldPush).toBe(false);
 	});
