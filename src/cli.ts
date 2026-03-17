@@ -29,6 +29,7 @@ import type {
 } from "./errors.js";
 import type { Gemini, GitHub } from "./services.js";
 import { GeminiLive, GitHubLive } from "./services.js";
+import { loadConfigFile, promptConfigSetup } from "./utils/config-file.js";
 import { Logger } from "./utils/logger.js";
 
 const logger = new Logger("GREPO");
@@ -36,6 +37,25 @@ const logger = new Logger("GREPO");
 await loadEnv();
 
 const argv = process.argv.slice(2);
+
+// Interactive setup if no API keys are configured
+if (argv.length > 0) {
+	const hasGeminiKey = !!(
+		process.env.GEMINI_API_KEY ?? process.env.GOOGLE_API_KEY
+	);
+	if (!hasGeminiKey) {
+		const configFile = loadConfigFile();
+		if (!configFile.geminiApiKey) {
+			const setup = await promptConfigSetup();
+			if (setup.geminiApiKey) {
+				process.env.GEMINI_API_KEY = setup.geminiApiKey;
+			}
+			if (setup.githubToken) {
+				process.env.GITHUB_TOKEN = setup.githubToken;
+			}
+		}
+	}
+}
 
 if (argv.length === 0) {
 	console.log(`Usage: grepo <command> <github-url> [options]
