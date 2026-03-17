@@ -25,6 +25,7 @@ import {
 } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { createInterface, type Interface } from "node:readline";
 import { Schema } from "effect";
 
 import { Logger } from "./logger.js";
@@ -47,6 +48,42 @@ export function writeConfigFile(config: ConfigFile): void {
 	writeFileSync(CONFIG_PATH, content, "utf-8");
 	chmodSync(CONFIG_PATH, 0o600);
 	logger.info("Config file written", { path: CONFIG_PATH });
+}
+
+function ask(rl: Interface, question: string): Promise<string> {
+	return new Promise((resolve) => {
+		rl.question(question, (answer: string) => {
+			resolve(answer);
+		});
+	});
+}
+
+export async function promptConfigSetup(): Promise<ConfigFile> {
+	const rl = createInterface({
+		input: process.stdin,
+		output: process.stderr,
+	});
+
+	try {
+		logger.info("No API keys found. Let's set up your config.");
+
+		const geminiApiKey = await ask(rl, "  Gemini API key: ");
+		const githubToken = await ask(
+			rl,
+			"  GitHub token (optional, press Enter to skip): ",
+		);
+
+		const config: ConfigFile = {
+			geminiApiKey: geminiApiKey || undefined,
+			githubToken: githubToken || undefined,
+		};
+
+		writeConfigFile(config);
+
+		return config;
+	} finally {
+		rl.close();
+	}
 }
 
 export function loadConfigFile(): ConfigFile {

@@ -32,9 +32,18 @@ vi.mock("node:fs", () => ({
 	chmodSync: mockChmodSync,
 }));
 
-const { loadConfigFile, writeConfigFile, CONFIG_PATH } = await import(
-	"./config-file.js"
-);
+const mockQuestion = vi.fn();
+const mockClose = vi.fn();
+
+vi.mock("node:readline", () => ({
+	createInterface: vi.fn(() => ({
+		question: mockQuestion,
+		close: mockClose,
+	})),
+}));
+
+const { loadConfigFile, writeConfigFile, promptConfigSetup, CONFIG_PATH } =
+	await import("./config-file.js");
 
 describe("loadConfigFile", () => {
 	let warnSpy: ReturnType<typeof vi.spyOn>;
@@ -158,5 +167,56 @@ describe("writeConfigFile", () => {
 			"utf-8",
 		);
 		expect(mockChmodSync).toHaveBeenCalledWith(CONFIG_PATH, 0o600);
+	});
+});
+
+describe("promptConfigSetup", () => {
+	let logSpy: ReturnType<typeof vi.spyOn>;
+
+	beforeEach(() => {
+		logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+		vi.clearAllMocks();
+	});
+
+	afterEach(() => {
+		logSpy.mockRestore();
+	});
+
+	it("prompts for both keys, writes config, and returns result", async () => {
+		mockQuestion
+			.mockImplementationOnce((_q: string, cb: (answer: string) => void) =>
+				cb("my-gemini-key"),
+			)
+			.mockImplementationOnce((_q: string, cb: (answer: string) => void) =>
+				cb("ghp_mytoken"),
+			);
+
+		const result = await promptConfigSetup();
+
+		expect(result).toEqual({
+			geminiApiKey: "my-gemini-key",
+			githubToken: "ghp_mytoken",
+		});
+		expect(mockWriteFileSync).toHaveBeenCalled();
+		expect(mockClose).toHaveBeenCalled();
+	});
+
+	it("allows skipping GitHub token with empty input", async () => {
+		mockQuestion
+			.mockImplementationOnce((_q: string, cb: (answer: string) => void) =>
+				cb("my-gemini-key"),
+			)
+			.mockImplementationOnce((_q: string, cb: (answer: string) => void) =>
+				cb(""),
+			);
+
+		const result = await promptConfigSetup();
+
+		expect(result).toEqual({
+			geminiApiKey: "my-gemini-key",
+			githubToken: undefined,
+		});
+		expect(mockWriteFileSync).toHaveBeenCalled();
+		expect(mockClose).toHaveBeenCalled();
 	});
 });
