@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.4.0](https://github.com/ElysiumOSS/grepo/compare/0.3.0...0.4.0) (2026-03-17)
+
+### Features
+
+* **cli:** wire interactive config setup when no API keys are found ([927037d](https://github.com/ElysiumOSS/grepo/commit/927037d2723a350c8d4a6b9de9c5db094ab4531e))
+* **config:** add config file schema, reader, and edge case tests ([ab6538e](https://github.com/ElysiumOSS/grepo/commit/ab6538ee44d95996c8a05e82821bdb9c2859d481))
+* **config:** add interactive config setup prompt ([10890f9](https://github.com/ElysiumOSS/grepo/commit/10890f9bcc84963067bca2679f6a8a4efcc09f34))
+* **config:** add writeConfigFile with 0600 permissions ([1745ec5](https://github.com/ElysiumOSS/grepo/commit/1745ec53531c6ed1dc3c8f0603098b6978b44320))
+* **config:** wire config file into buildConfig for API key resolution ([9192026](https://github.com/ElysiumOSS/grepo/commit/91920269453c1bb09826833ba2449edc70c05a24))
+
 ## [0.3.0](https://github.com/ElysiumOSS/grepo/compare/0.2.0...0.3.0) (2026-03-16)
 
 ### Features
