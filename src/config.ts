@@ -23,6 +23,7 @@ import { Schema } from "effect";
 
 import { GrepoValidationError } from "./errors.js";
 import { parseArgs } from "./utils/args.js";
+import { loadConfigFile } from "./utils/config-file.js";
 import * as validation from "./utils/validation.js";
 
 // ============================================================================
@@ -173,15 +174,21 @@ export function buildConfig(argv: string[]): GrepoConfig {
 		});
 	}
 
+	const configFile = loadConfigFile();
+
 	const geminiApiKey =
-		process.env.GEMINI_API_KEY ?? process.env.GOOGLE_API_KEY ?? "";
+		process.env.GEMINI_API_KEY ??
+		process.env.GOOGLE_API_KEY ??
+		configFile.geminiApiKey ??
+		"";
 	if (!validation.isValidGeminiApiKey(geminiApiKey)) {
 		throw new GrepoValidationError({
 			message: "GEMINI_API_KEY is missing or invalid",
 		});
 	}
 
-	const githubToken = process.env.GITHUB_TOKEN ?? process.env.GH_TOKEN;
+	const githubToken =
+		process.env.GITHUB_TOKEN ?? process.env.GH_TOKEN ?? configFile.githubToken;
 	const shouldApply = !!options.apply;
 	const shouldPush = !!options.push;
 	const shouldMerge = !!options.merge;

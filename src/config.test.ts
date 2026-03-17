@@ -21,6 +21,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { buildConfig } from "./config.js";
 import { GrepoValidationError } from "./errors.js";
 
+vi.mock("./utils/config-file.js", () => ({
+	loadConfigFile: vi.fn(() => ({})),
+	promptConfigSetup: vi.fn(async () => ({})),
+	writeConfigFile: vi.fn(),
+}));
+
 describe("buildConfig", () => {
 	const originalEnv = { ...process.env };
 
@@ -144,5 +150,41 @@ describe("buildConfig", () => {
 		expect(exitSpy).toHaveBeenCalledWith(1);
 		logSpy.mockRestore();
 		exitSpy.mockRestore();
+	});
+
+	it("uses geminiApiKey from config file when env var is missing", async () => {
+		delete process.env.GEMINI_API_KEY;
+		delete process.env.GOOGLE_API_KEY;
+		const { loadConfigFile } = await import("./utils/config-file.js");
+		vi.mocked(loadConfigFile).mockReturnValue({
+			geminiApiKey: "c".repeat(30),
+		});
+		const config = buildConfig(["readme", "https://github.com/owner/repo"]);
+		expect(config.geminiApiKey).toBe("c".repeat(30));
+	});
+
+	it("prefers env var over config file for geminiApiKey", async () => {
+		process.env.GEMINI_API_KEY = "a".repeat(30);
+		const { loadConfigFile } = await import("./utils/config-file.js");
+		vi.mocked(loadConfigFile).mockReturnValue({
+			geminiApiKey: "c".repeat(30),
+		});
+		const config = buildConfig(["readme", "https://github.com/owner/repo"]);
+		expect(config.geminiApiKey).toBe("a".repeat(30));
+	});
+
+	it("uses githubToken from config file when env var is missing", async () => {
+		delete process.env.GITHUB_TOKEN;
+		delete process.env.GH_TOKEN;
+		const { loadConfigFile } = await import("./utils/config-file.js");
+		vi.mocked(loadConfigFile).mockReturnValue({
+			githubToken: "ghp_configfiletoken123",
+		});
+		const config = buildConfig([
+			"readme",
+			"https://github.com/owner/repo",
+			"--push",
+		]);
+		expect(config.githubToken).toBe("ghp_configfiletoken123");
 	});
 });
