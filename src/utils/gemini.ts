@@ -63,9 +63,10 @@ export class GeminiService {
 			return names;
 		} catch (error) {
 			const errorMsg = error instanceof Error ? error.message : String(error);
-			this.logger.warn(`Failed to fetch models list`, {
-				error: errorMsg,
-			});
+			this.logger.warn(
+				`Failed to fetch models list, falling back to hardcoded defaults`,
+				{ error: errorMsg },
+			);
 			return [];
 		}
 	}
@@ -164,6 +165,7 @@ export class GeminiService {
 				if (this.isRateLimitError(error) && nextModel) {
 					this.logger.warn(
 						`Rate limited on ${modelName}, falling back to ${nextModel}`,
+						{ model: modelName, fallback: nextModel },
 					);
 					continue;
 				}
@@ -177,6 +179,9 @@ export class GeminiService {
 			}
 		}
 
+		this.logger.warn("All Gemini models exhausted", {
+			modelsAttempted: models.join(", "),
+		});
 		throw new ApiError("All Gemini models exhausted", undefined, "Gemini API");
 	}
 }

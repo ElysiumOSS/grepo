@@ -64,9 +64,12 @@ if (!resolvedBranch) {
 		const client = new GitHubClient(parsedConfig.githubToken);
 		resolvedBranch = await client.getDefaultBranch(owner, repo);
 		logger.info(`Detected default branch: ${resolvedBranch}`);
-	} catch {
+	} catch (err) {
 		resolvedBranch = "main";
-		logger.warn("Could not detect default branch, falling back to 'main'");
+		logger.warn("Could not detect default branch, falling back to 'main'", {
+			error: err instanceof Error ? err.message : String(err),
+			repo: parsedConfig.repoUrl,
+		});
 	}
 }
 

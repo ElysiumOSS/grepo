@@ -146,6 +146,7 @@ export type RepoData = Schema.Schema.Type<typeof GitIngestResponse>;
 
 export const fetchRepo = (
 	repoUrl: string,
+	token?: string,
 ): Effect.Effect<RepoData, GitIngestError> =>
 	Effect.tryPromise({
 		catch: (error) =>
@@ -153,5 +154,5 @@ export const fetchRepo = (
 				cause: error,
 				message: error instanceof Error ? error.message : String(error),
 			}),
-		try: () => fetchRepositoryContent(repoUrl),
+		try: () => fetchRepositoryContent(repoUrl, token),
 	});

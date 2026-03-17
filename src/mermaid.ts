@@ -61,13 +61,31 @@ export function extractMermaidBlocks(markdown: string): MermaidBlock[] {
 async function validateBlock(
 	block: MermaidBlock,
 ): Promise<{ error?: string; valid: boolean }> {
-	const dir = await mkdtemp(join(tmpdir(), "mermaid-"));
+	let dir: string;
+	try {
+		dir = await mkdtemp(join(tmpdir(), "mermaid-"));
+	} catch (err) {
+		const message = err instanceof Error ? err.message : String(err);
+		logger.warn(`Failed to create temp directory: ${message}`);
+		return {
+			error: `Temp directory creation failed: ${message}`,
+			valid: false,
+		};
+	}
+
 	const inputFile = join(dir, "input.mmd");
 	const outputFile = join(dir, "output.svg");
 
 	try {
 		await writeFile(inputFile, block.code);
+	} catch (err) {
+		const message = err instanceof Error ? err.message : String(err);
+		logger.warn(`Failed to write mermaid input file: ${message}`);
+		await rm(dir, { force: true, recursive: true }).catch(() => {});
+		return { error: `File write failed: ${message}`, valid: false };
+	}
 
+	try {
 		await execFileAsync(
 			"npx",
 			["mmdc", "-i", inputFile, "-o", outputFile, "-e", "svg"],
@@ -125,6 +143,7 @@ export const validateAndFixMermaid = (
 
 		logger.info(`Validating ${blocks.length} Mermaid diagram(s)...`);
 		let result = content;
+		let offset = 0;
 
 		for (const block of blocks) {
 			let currentCode = block.code;
@@ -145,7 +164,12 @@ export const validateAndFixMermaid = (
 				);
 				const fixed: string = yield* Effect.catchAll(
 					gemini.generateContent(fixPrompt),
-					() => Effect.succeed(currentCode),
+					(err) => {
+						logger.warn(
+							`Diagram ${block.index + 1}: Gemini fix failed (${err.message}), keeping current code`,
+						);
+						return Effect.succeed(currentCode);
+					},
 				);
 
 				currentCode = fixed
@@ -158,21 +182,24 @@ export const validateAndFixMermaid = (
 				);
 			}
 
+			const start = block.start + offset;
+			const end = block.end + offset;
+
 			if (validation.valid && currentCode !== block.code) {
 				logger.success(
 					`Diagram ${block.index + 1} fixed after ${attempt} attempt(s)`,
 				);
-				result = result.replace(
-					`\`\`\`mermaid\n${block.code}\n\`\`\``,
-					`\`\`\`mermaid\n${currentCode}\n\`\`\``,
-				);
+				const replacement = `\`\`\`mermaid\n${currentCode}\n\`\`\``;
+				result = result.slice(0, start) + replacement + result.slice(end);
+				offset += replacement.length - (block.end - block.start);
 			} else if (validation.valid) {
 				logger.success(`Diagram ${block.index + 1} valid`);
 			} else {
 				logger.warn(
-					`Diagram ${block.index + 1} could not be fixed, removing it`,
+					`Diagram ${block.index + 1} could not be fixed after ${attempt} attempt(s), removing it: ${validation.error}`,
 				);
-				result = result.replace(`\`\`\`mermaid\n${block.code}\n\`\`\``, "");
+				result = result.slice(0, start) + result.slice(end);
+				offset -= block.end - block.start;
 			}
 		}
 

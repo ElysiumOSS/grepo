@@ -48,7 +48,7 @@ export const run = (config: GrepoConfig) =>
 		});
 
 		logger.info("Fetching repository content via GitIngest...");
-		const repoData = yield* fetchRepo(config.repoUrl);
+		const repoData = yield* fetchRepo(config.repoUrl, config.githubToken);
 		logger.success("Content fetched successfully");
 
 		// Phase 1: Analysis

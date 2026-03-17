@@ -37,6 +37,7 @@ export const GitIngestResponse = Schema.Struct({
 
 export async function fetchRepositoryContent(
 	repoUrl: string,
+	token?: string,
 	maxFileSize: string = "1118",
 ): Promise<Schema.Schema.Type<typeof GitIngestResponse>> {
 	return Effect.runPromise(
@@ -48,7 +49,7 @@ export async function fetchRepositoryContent(
 					max_file_size: maxFileSize,
 					pattern: "",
 					pattern_type: "exclude",
-					token: "",
+					token: token ?? "",
 				},
 				{ schema: GitIngestResponse },
 			),

@@ -18,7 +18,22 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { GeminiService } from "./gemini.js";
+import { ApiError } from "./validation.js";
+
+// Mock @google/genai at module level
+const mockGenerateContent = vi.fn();
+const mockModelsList = vi.fn();
+
+vi.mock("@google/genai", () => ({
+	GoogleGenAI: vi.fn().mockImplementation(() => ({
+		models: {
+			generateContent: mockGenerateContent,
+			list: mockModelsList,
+		},
+	})),
+}));
+
+const { GeminiService } = await import("./gemini.js");
 
 // Access private methods via prototype for testing pure logic
 const parseModelVersion = (name: string): number => {
@@ -41,6 +56,18 @@ const isRateLimitError = (error: unknown): boolean => {
 		msg.includes("quota")
 	);
 };
+
+function makeModelsIterable(
+	models: Array<{ name: string; supportedActions?: string[] }>,
+) {
+	return {
+		[Symbol.asyncIterator]: async function* () {
+			for (const m of models) {
+				yield m;
+			}
+		},
+	};
+}
 
 describe("parseModelVersion", () => {
 	it("parses version from model name", () => {
@@ -93,6 +120,7 @@ describe("GeminiService", () => {
 
 	beforeEach(() => {
 		logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+		vi.clearAllMocks();
 	});
 
 	afterEach(() => {
@@ -102,5 +130,184 @@ describe("GeminiService", () => {
 	it("constructs with an API key", () => {
 		const service = new GeminiService("test-api-key-12345");
 		expect(service).toBeInstanceOf(GeminiService);
+	});
+
+	describe("generateContent", () => {
+		it("returns generated text on success", async () => {
+			mockModelsList.mockResolvedValue(
+				makeModelsIterable([
+					{
+						name: "models/gemini-2.0-flash",
+						supportedActions: ["generateContent"],
+					},
+				]),
+			);
+			mockGenerateContent.mockResolvedValue({ text: "Hello world" });
+
+			const service = new GeminiService("test-key");
+			const result = await service.generateContent("Say hello");
+			expect(result).toBe("Hello world");
+		});
+
+		it("throws ApiError when Gemini returns empty content", async () => {
+			mockModelsList.mockResolvedValue(
+				makeModelsIterable([
+					{
+						name: "models/gemini-2.0-flash",
+						supportedActions: ["generateContent"],
+					},
+				]),
+			);
+			mockGenerateContent.mockResolvedValue({ text: "" });
+
+			const service = new GeminiService("test-key");
+			await expect(service.generateContent("Say hello")).rejects.toThrow(
+				ApiError,
+			);
+			await expect(service.generateContent("Say hello")).rejects.toThrow(
+				/empty content/,
+			);
+		});
+
+		it("falls back to next model on rate limit", async () => {
+			mockModelsList.mockResolvedValue(
+				makeModelsIterable([
+					{
+						name: "models/gemini-2.0-flash",
+						supportedActions: ["generateContent"],
+					},
+					{
+						name: "models/gemini-1.5-flash",
+						supportedActions: ["generateContent"],
+					},
+				]),
+			);
+			mockGenerateContent
+				.mockRejectedValueOnce(new Error("HTTP 429 Too Many Requests"))
+				.mockResolvedValueOnce({ text: "Fallback response" });
+
+			const service = new GeminiService("test-key");
+			const result = await service.generateContent("test prompt");
+			expect(result).toBe("Fallback response");
+			expect(mockGenerateContent).toHaveBeenCalledTimes(2);
+		});
+
+		it("throws on non-rate-limit error without falling back", async () => {
+			mockModelsList.mockResolvedValue(
+				makeModelsIterable([
+					{
+						name: "models/gemini-2.0-flash",
+						supportedActions: ["generateContent"],
+					},
+					{
+						name: "models/gemini-1.5-flash",
+						supportedActions: ["generateContent"],
+					},
+				]),
+			);
+			mockGenerateContent.mockRejectedValueOnce(new Error("Invalid API key"));
+
+			const service = new GeminiService("test-key");
+			await expect(service.generateContent("test")).rejects.toThrow(
+				/Invalid API key/,
+			);
+			expect(mockGenerateContent).toHaveBeenCalledTimes(1);
+		});
+
+		it("throws when all models are exhausted via rate limits", async () => {
+			mockModelsList.mockResolvedValue(
+				makeModelsIterable([
+					{
+						name: "models/gemini-2.0-flash",
+						supportedActions: ["generateContent"],
+					},
+				]),
+			);
+			mockGenerateContent.mockRejectedValue(
+				new Error("HTTP 429 Too Many Requests"),
+			);
+
+			const service = new GeminiService("test-key");
+			await expect(service.generateContent("test")).rejects.toThrow(
+				/Gemini generation failed/,
+			);
+		});
+
+		it("uses preferred model first when specified", async () => {
+			mockModelsList.mockResolvedValue(
+				makeModelsIterable([
+					{
+						name: "models/gemini-2.0-flash",
+						supportedActions: ["generateContent"],
+					},
+					{
+						name: "models/gemini-1.5-pro",
+						supportedActions: ["generateContent"],
+					},
+				]),
+			);
+			mockGenerateContent.mockResolvedValue({ text: "result" });
+
+			const service = new GeminiService("test-key");
+			await service.generateContent("test", { model: "gemini-1.5-pro" });
+
+			expect(mockGenerateContent).toHaveBeenCalledWith(
+				expect.objectContaining({ model: "gemini-1.5-pro" }),
+			);
+		});
+
+		it("uses hardcoded defaults when model list fetch fails", async () => {
+			mockModelsList.mockRejectedValue(new Error("Network error"));
+			mockGenerateContent.mockResolvedValue({ text: "result" });
+
+			const service = new GeminiService("test-key");
+			const result = await service.generateContent("test");
+			expect(result).toBe("result");
+			expect(mockGenerateContent).toHaveBeenCalledWith(
+				expect.objectContaining({ model: "gemini-2.0-flash" }),
+			);
+		});
+
+		it("filters out non-generation models", async () => {
+			mockModelsList.mockResolvedValue(
+				makeModelsIterable([
+					{
+						name: "models/gemini-2.0-flash",
+						supportedActions: ["generateContent"],
+					},
+					{
+						name: "models/text-embedding-004",
+						supportedActions: ["embedContent"],
+					},
+					{ name: "models/imagen-3.0", supportedActions: ["generateImage"] },
+				]),
+			);
+			mockGenerateContent.mockResolvedValue({ text: "result" });
+
+			const service = new GeminiService("test-key");
+			await service.generateContent("test");
+
+			expect(mockGenerateContent).toHaveBeenCalledWith(
+				expect.objectContaining({ model: "gemini-2.0-flash" }),
+			);
+		});
+
+		it("caches model list across calls", async () => {
+			mockModelsList.mockResolvedValue(
+				makeModelsIterable([
+					{
+						name: "models/gemini-2.0-flash",
+						supportedActions: ["generateContent"],
+					},
+				]),
+			);
+			mockGenerateContent.mockResolvedValue({ text: "result" });
+
+			const service = new GeminiService("test-key");
+			await service.generateContent("first");
+			await service.generateContent("second");
+
+			expect(mockModelsList).toHaveBeenCalledTimes(1);
+		});
 	});
 });

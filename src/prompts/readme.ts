@@ -166,9 +166,12 @@ export function parseAnalysis(raw: string): AnalysisResult {
 	} catch (err) {
 		const logger = new Logger("GREPO:README-PROMPT");
 		logger.warn(
-			`Failed to parse analysis JSON, falling back to DEFAULT_ANALYSIS. Error: ${
-				err instanceof Error ? err.message : String(err)
-			}`,
+			`Failed to parse analysis JSON, falling back to DEFAULT_ANALYSIS`,
+			{
+				error: err instanceof Error ? err.message : String(err),
+				rawLength: raw.length,
+				rawPreview: raw.slice(0, 200),
+			},
 		);
 		return DEFAULT_ANALYSIS;
 	}
