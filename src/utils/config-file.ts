@@ -16,7 +16,13 @@
  *
  */
 
-import { existsSync, readFileSync } from "node:fs";
+import {
+	chmodSync,
+	existsSync,
+	mkdirSync,
+	readFileSync,
+	writeFileSync,
+} from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { Schema } from "effect";
@@ -33,6 +39,15 @@ export const ConfigFileSchema = Schema.Struct({
 });
 
 export type ConfigFile = Schema.Schema.Type<typeof ConfigFileSchema>;
+
+export function writeConfigFile(config: ConfigFile): void {
+	const dir = CONFIG_PATH.replace(/\/[^/]+$/, "");
+	mkdirSync(dir, { recursive: true });
+	const content = JSON.stringify(config, null, 2);
+	writeFileSync(CONFIG_PATH, content, "utf-8");
+	chmodSync(CONFIG_PATH, 0o600);
+	logger.info("Config file written", { path: CONFIG_PATH });
+}
 
 export function loadConfigFile(): ConfigFile {
 	if (!existsSync(CONFIG_PATH)) {

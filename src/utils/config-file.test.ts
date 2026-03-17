@@ -20,13 +20,21 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockExistsSync = vi.fn();
 const mockReadFileSync = vi.fn();
+const mockMkdirSync = vi.fn();
+const mockWriteFileSync = vi.fn();
+const mockChmodSync = vi.fn();
 
 vi.mock("node:fs", () => ({
 	existsSync: mockExistsSync,
 	readFileSync: mockReadFileSync,
+	mkdirSync: mockMkdirSync,
+	writeFileSync: mockWriteFileSync,
+	chmodSync: mockChmodSync,
 }));
 
-const { loadConfigFile } = await import("./config-file.js");
+const { loadConfigFile, writeConfigFile, CONFIG_PATH } = await import(
+	"./config-file.js"
+);
 
 describe("loadConfigFile", () => {
 	let warnSpy: ReturnType<typeof vi.spyOn>;
@@ -104,5 +112,51 @@ describe("loadConfigFile", () => {
 		});
 		expect(result).not.toHaveProperty("unknownField");
 		expect(result).not.toHaveProperty("nested");
+	});
+});
+
+describe("writeConfigFile", () => {
+	let logSpy: ReturnType<typeof vi.spyOn>;
+
+	beforeEach(() => {
+		logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+		vi.clearAllMocks();
+	});
+
+	afterEach(() => {
+		logSpy.mockRestore();
+	});
+
+	it("creates config directory and writes file with 0600 permissions", () => {
+		const config = {
+			geminiApiKey: "test-gemini-key",
+			githubToken: "ghp_testtoken123",
+		};
+
+		writeConfigFile(config);
+
+		const dir = CONFIG_PATH.replace(/\/[^/]+$/, "");
+		expect(mockMkdirSync).toHaveBeenCalledWith(dir, { recursive: true });
+		expect(mockWriteFileSync).toHaveBeenCalledWith(
+			CONFIG_PATH,
+			JSON.stringify(config, null, 2),
+			"utf-8",
+		);
+		expect(mockChmodSync).toHaveBeenCalledWith(CONFIG_PATH, 0o600);
+	});
+
+	it("writes config with only geminiApiKey when githubToken is omitted", () => {
+		const config = {
+			geminiApiKey: "only-gemini-key",
+		};
+
+		writeConfigFile(config);
+
+		expect(mockWriteFileSync).toHaveBeenCalledWith(
+			CONFIG_PATH,
+			JSON.stringify(config, null, 2),
+			"utf-8",
+		);
+		expect(mockChmodSync).toHaveBeenCalledWith(CONFIG_PATH, 0o600);
 	});
 });
