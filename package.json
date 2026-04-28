@@ -1,6 +1,6 @@
 {
 	"name": "@elysiumoss/grepo",
-	"version": "0.4.0",
+	"version": "0.4.1",
 	"description": "AI-powered GitHub repository management CLI — generate READMEs, topics, descriptions, and more using Gemini",
 	"keywords": [
 		"ai",
