@@ -12,6 +12,8 @@
 	],
 	"words": [
 		"agentic",
+		"autonumber",
+		"configfiletoken",
 		"elysiumoss",
 		"Farmingdale",
 		"Groq",
@@ -27,6 +29,7 @@
 		"millis",
 		"mkdocs",
 		"mmdc",
+		"mytoken",
 		"octocat",
 		"ollama",
 		"subdirs",
