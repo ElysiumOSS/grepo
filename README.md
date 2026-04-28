@@ -11,7 +11,8 @@
 
 ## Overview
 
-`grepo` automates the heavy lifting of repository maintenance. By integrating with LLM providers like Google Gemini, it intelligently analyzes your codebase to generate professional READMEs, suggest relevant repository topics, craft repository descriptions, summarize technologies, and recommend improvements.
+`grepo` automates the heavy lifting of repository maintenance.
+By integrating with LLM providers like Google Gemini, it intelligently analyzes your codebase to generate professional READMEs, suggest relevant repository topics, craft repository descriptions, summarize technologies, and recommend improvements.
 
 ### High-Level Flow
 
@@ -30,7 +31,8 @@ flowchart LR
 
 ## Architecture
 
-`grepo` is built on top of the [Effect](https://effect.website/) ecosystem, providing typed errors, composable services, and structured concurrency. The CLI is decomposed into **commands**, **services**, and **utilities**.
+`grepo` is built on top of the [Effect](https://effect.website/) ecosystem, providing typed errors, composable services, and structured concurrency.
+The CLI is decomposed into **commands**, **services**, and **utilities**.
 
 ### Module Layout
 
@@ -108,7 +110,8 @@ flowchart TB
 
 ## Command Pipeline
 
-Every command follows the same shape: **parse → fetch context → prompt → act**. The `readme` command adds analysis, generation, and mermaid validation phases.
+Every command follows the same shape: **parse → fetch context → prompt → act**.
+The `readme` command adds analysis, generation, and mermaid validation phases.
 
 ### Generic Command Flow
 
@@ -267,7 +270,8 @@ flowchart TD
 
 ## Error Model
 
-Errors are tagged data classes from `errors.ts`. Each command declares its possible failures in the type so `Effect.catchTags` can route them to user-friendly messages.
+Errors are tagged data classes from `errors.ts`.
+Each command declares its possible failures in the type so `Effect.catchTags` can route them to user-friendly messages.
 
 ```mermaid
 stateDiagram-v2
@@ -343,7 +347,8 @@ grepo describe https://github.com/owner/repo --apply
 
 ## Configuration
 
-`grepo` requires authentication for repository access and AI analysis. Configure these via environment variables, a `.env` file, or `~/.grepo/config.json`:
+`grepo` requires authentication for repository access and AI analysis.
+Configure these via environment variables, a `.env` file, or `~/.grepo/config.json`:
 
 | Key                                 | Required for                       |
 | :---------------------------------- | :--------------------------------- |
