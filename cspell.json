@@ -25,6 +25,7 @@
 		"gitingest",
 		"grepo",
 		"imagen",
+		"inlines",
 		"mermaid",
 		"millis",
 		"mkdocs",
@@ -32,6 +33,7 @@
 		"mytoken",
 		"octocat",
 		"ollama",
+		"pyproject",
 		"subdirs",
 		"testtoken",
 		"tsdown"

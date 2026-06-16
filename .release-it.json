@@ -1,7 +1,8 @@
 {
 	"git": {
 		"commitMessage": "chore: release v${version}",
-		"requireCommits": true
+		"requireCommits": true,
+		"requireCommitsFail": false
 	},
 	"github": { "release": true, "releaseName": "v${version}" },
 	"npm": { "publishArgs": ["--access public", "--provenance"] },

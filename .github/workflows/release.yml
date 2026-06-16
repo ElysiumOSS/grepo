@@ -4,6 +4,10 @@ concurrency:
 jobs:
   release:
     runs-on: ubuntu-latest
+    # Skip the run that release-it triggers with its own "chore: release vX"
+    # commit, so a release never re-triggers another release. Manual dispatch
+    # always runs.
+    if: "${{ github.event_name == 'workflow_dispatch' || !startsWith(github.event.head_commit.message, 'chore: release') }}"
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -23,7 +27,15 @@ jobs:
       - name: Set up npm auth
         run: |
           echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
-      - uses: JoshuaKGoldberg/release-it-action@v0.3.2
+      # Run release-it directly instead of release-it-action. The action gates on
+      # should-semantic-release, which returns false for "Merge pull request #N"
+      # HEAD commits -- so merging PRs (this repo's workflow) never published to
+      # npm. release-it's conventional-changelog plugin reads the full commit
+      # range since the last tag and computes the bump regardless of merge
+      # strategy; the job-level `if` above handles the re-trigger guard the
+      # action used to provide.
+      - name: Release to npm
+        run: bunx release-it --ci
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -31,7 +43,15 @@ jobs:
         run: |
           echo "@elysiumoss:registry=https://npm.pkg.github.com" >> ~/.npmrc
           echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> ~/.npmrc
-          npm publish --registry=https://npm.pkg.github.com --access public --no-provenance
+          VERSION="$(node -p "require('./package.json').version")"
+          # Idempotent: the version only changes when release-it cuts a new
+          # release. Skip if it is already on GitHub Packages instead of failing
+          # the whole job with "cannot publish over previously published".
+          if npm view "@elysiumoss/grepo@${VERSION}" version --registry=https://npm.pkg.github.com >/dev/null 2>&1; then
+            echo "v${VERSION} already on GitHub Packages -- skipping."
+          else
+            npm publish --registry=https://npm.pkg.github.com --access public --no-provenance
+          fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -41,6 +61,7 @@ on:
   push:
     branches:
       - master
+  workflow_dispatch:
 
 permissions:
   contents: write
