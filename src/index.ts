@@ -19,6 +19,7 @@
 // Core
 
 export { run as analyze } from "./commands/analyze.js";
+export { run as changelog } from "./commands/changelog.js";
 export { run as describe } from "./commands/describe.js";
 // Commands
 export { run as readme } from "./commands/readme.js";
@@ -64,6 +65,15 @@ export {
 	type GitHubServiceApi,
 	type RepoData,
 } from "./services.js";
+export {
+	buildChangelogPrompt,
+	type CommitInfo,
+	isNoiseCommit,
+	type ParsedCommit,
+	parseConventionalCommit,
+	type RenderOptions,
+	renderChangelog,
+} from "./utils/changelog.js";
 export { GeminiService } from "./utils/gemini.js";
 export { GitHubClient } from "./utils/github.js";
 export { fetchRepositoryContent } from "./utils/gitingest.js";

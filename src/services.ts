@@ -20,6 +20,7 @@ import type { Schema } from "effect";
 import { Context, Effect, Layer } from "effect";
 
 import { GeminiError, GitHubError, GitIngestError } from "./errors.js";
+import type { CommitInfo } from "./utils/changelog.js";
 import { GeminiService as GeminiClient } from "./utils/gemini.js";
 import { GitHubClient } from "./utils/github.js";
 import {
@@ -57,10 +58,25 @@ export const GeminiLive = (apiKey: string) =>
 // ============================================================================
 
 export interface GitHubServiceApi {
+	readonly compareCommits: (
+		owner: string,
+		repo: string,
+		base: string,
+		head: string,
+	) => Effect.Effect<readonly CommitInfo[], GitHubError>;
 	readonly getDefaultBranch: (
 		owner: string,
 		repo: string,
 	) => Effect.Effect<string, GitHubError>;
+	readonly listCommits: (
+		owner: string,
+		repo: string,
+		ref: string,
+	) => Effect.Effect<readonly CommitInfo[], GitHubError>;
+	readonly listTags: (
+		owner: string,
+		repo: string,
+	) => Effect.Effect<readonly { name: string; sha: string }[], GitHubError>;
 	readonly getTopics: (
 		owner: string,
 		repo: string,
@@ -90,6 +106,15 @@ export class GitHub extends Context.Tag("GitHub")<GitHub, GitHubServiceApi>() {}
 export const GitHubLive = (token?: string) => {
 	const client = new GitHubClient(token);
 	return Layer.succeed(GitHub, {
+		compareCommits: (owner, repo, base, head) =>
+			Effect.tryPromise({
+				catch: (error) =>
+					new GitHubError({
+						endpoint: `repos/${owner}/${repo}/compare/${base}...${head}`,
+						message: error instanceof Error ? error.message : String(error),
+					}),
+				try: () => client.compareCommits(owner, repo, base, head),
+			}),
 		getDefaultBranch: (owner, repo) =>
 			Effect.tryPromise({
 				catch: (error) =>
@@ -98,6 +123,24 @@ export const GitHubLive = (token?: string) => {
 						message: error instanceof Error ? error.message : String(error),
 					}),
 				try: () => client.getDefaultBranch(owner, repo),
+			}),
+		listCommits: (owner, repo, ref) =>
+			Effect.tryPromise({
+				catch: (error) =>
+					new GitHubError({
+						endpoint: `repos/${owner}/${repo}/commits`,
+						message: error instanceof Error ? error.message : String(error),
+					}),
+				try: () => client.listCommits(owner, repo, ref),
+			}),
+		listTags: (owner, repo) =>
+			Effect.tryPromise({
+				catch: (error) =>
+					new GitHubError({
+						endpoint: `repos/${owner}/${repo}/tags`,
+						message: error instanceof Error ? error.message : String(error),
+					}),
+				try: () => client.listTags(owner, repo),
 			}),
 		getTopics: (owner, repo) =>
 			Effect.tryPromise({
