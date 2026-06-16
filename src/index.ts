@@ -67,5 +67,6 @@ export {
 export { GeminiService } from "./utils/gemini.js";
 export { GitHubClient } from "./utils/github.js";
 export { fetchRepositoryContent } from "./utils/gitingest.js";
+export { localFileContent } from "./utils/local-content.js";
 // Utilities
 export { Logger } from "./utils/logger.js";

@@ -86,9 +86,12 @@ async function validateBlock(
 	}
 
 	try {
+		// --no-install: use the pinned @mermaid-js/mermaid-cli from node_modules and
+		// NEVER fetch+run an arbitrary `mmdc` from the network at runtime (npx will
+		// fail loudly instead of silently downloading — closes the supply-chain gap).
 		await execFileAsync(
 			"npx",
-			["mmdc", "-i", inputFile, "-o", outputFile, "-e", "svg"],
+			["--no-install", "mmdc", "-i", inputFile, "-o", outputFile, "-e", "svg"],
 			{ timeout: 15_000 },
 		);
 
