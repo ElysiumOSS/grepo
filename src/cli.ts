@@ -67,6 +67,7 @@ Commands:
   summary   Summarize repository
   tech      List technologies used
   improve   Suggest improvements
+  changelog Generate a changelog from commits since the last tag
 
 Run 'grepo <command> --help' for more information.`);
 	process.exit(0);
@@ -124,6 +125,9 @@ switch (config.command) {
 	case "tech":
 	case "improve":
 		run = (await import("./commands/analyze.js")).run;
+		break;
+	case "changelog":
+		run = (await import("./commands/changelog.js")).run;
 		break;
 }
 

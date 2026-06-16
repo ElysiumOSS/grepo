@@ -37,6 +37,7 @@ export const Command = Schema.Literal(
 	"summary",
 	"tech",
 	"improve",
+	"changelog",
 );
 export type Command = Schema.Schema.Type<typeof Command>;
 
@@ -56,12 +57,14 @@ export const GrepoConfig = Schema.Struct({
 	geminiApiKey: Schema.String,
 	githubToken: Schema.optional(Schema.String),
 	isDryRun: Schema.Boolean,
+	isRaw: Schema.optional(Schema.Boolean),
 	outputFile: Schema.String,
 	outputFormat: OutputFormat,
 	repoUrl: Schema.String,
 	shouldApply: Schema.Boolean,
 	shouldMerge: Schema.Boolean,
 	shouldPush: Schema.Boolean,
+	since: Schema.optional(Schema.String),
 	style: DocumentationStyle,
 	tone: Schema.optional(
 		Schema.Literal("casual", "minimal", "professional", "technical"),
@@ -105,7 +108,7 @@ export async function loadEnv(): Promise<void> {
 // Config Builder
 // ============================================================================
 
-const BOOLEAN_FLAGS = ["push", "apply", "merge", "dry-run"] as const;
+const BOOLEAN_FLAGS = ["push", "apply", "merge", "dry-run", "raw"] as const;
 
 const USAGE = `Usage: grepo <command> <github-url> [options]
 
@@ -116,16 +119,19 @@ Commands:
   summary   Summarize repository
   tech      List technologies used
   improve   Suggest improvements
+  changelog Generate a changelog from commits since the last tag
 
 Options:
   --format md|mdx              Output format (readme only, default: md)
   --style minimal|standard|comprehensive  Documentation style (readme only, default: standard)
-  --output <file>              Output file path (readme only)
+  --output <file>              Output file path (readme; changelog writes here when set)
   --push                       Push to GitHub (readme only)
   --apply                      Apply changes to GitHub (topics, describe)
   --merge                      Merge with existing topics (topics only)
   --dry-run                    Preview changes without applying
   --branch <name>              Target branch (default: auto-detect from repo)
+  --since <tag>                Changelog start ref (default: latest tag)
+  --raw                        Changelog: skip the AI polish, emit grouped commits
   --tone <voice>              Tone: casual, professional, minimal, technical (default: auto-detect)`;
 
 const VALID_TONES = ["casual", "professional", "minimal", "technical"] as const;
@@ -159,6 +165,7 @@ export function buildConfig(argv: string[]): GrepoConfig {
 		"summary",
 		"tech",
 		"improve",
+		"changelog",
 	];
 	if (!validCommands.includes(command as Command)) {
 		console.error(`Unknown command: ${command}`);
@@ -207,12 +214,14 @@ export function buildConfig(argv: string[]): GrepoConfig {
 		geminiApiKey,
 		githubToken,
 		isDryRun: !!options["dry-run"],
+		isRaw: !!options.raw,
 		outputFile: (options.output as string) || `README.${format}`,
 		outputFormat: format as OutputFormat,
 		repoUrl,
 		shouldApply,
 		shouldMerge,
 		shouldPush,
+		since: (options.since as string) || undefined,
 		style: ((options.style as string) || "standard") as DocumentationStyle,
 		tone: validateTone(options.tone as string | undefined),
 	};

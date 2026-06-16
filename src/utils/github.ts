@@ -19,6 +19,7 @@
 import * as FetchHttpClient from "@effect/platform/FetchHttpClient";
 import { Effect, Schema } from "effect";
 
+import type { CommitInfo } from "./changelog.js";
 import { get, patch, put } from "./fetcher.js";
 import { ApiError } from "./validation.js";
 
@@ -33,6 +34,30 @@ export const GitHubFileContent = Schema.Struct({
 	sha: Schema.String,
 	size: Schema.Number,
 });
+
+const GitHubCommit = Schema.Struct({
+	commit: Schema.Struct({
+		author: Schema.optional(
+			Schema.Struct({
+				date: Schema.optional(Schema.String),
+				name: Schema.optional(Schema.String),
+			}),
+		),
+		message: Schema.String,
+	}),
+	sha: Schema.String,
+});
+
+function normalizeCommit(
+	raw: Schema.Schema.Type<typeof GitHubCommit>,
+): CommitInfo {
+	return {
+		author: raw.commit.author?.name,
+		date: raw.commit.author?.date,
+		message: raw.commit.message,
+		sha: raw.sha,
+	};
+}
 
 export class GitHubClient {
 	constructor(private readonly token?: string) {}
@@ -194,5 +219,67 @@ export class GitHubClient {
 				FetchHttpClient.layer,
 			),
 		);
+	}
+
+	async listTags(
+		owner: string,
+		repo: string,
+	): Promise<{ name: string; sha: string }[]> {
+		const TagsResponse = Schema.Array(
+			Schema.Struct({
+				commit: Schema.Struct({ sha: Schema.String }),
+				name: Schema.String,
+			}),
+		);
+		const result = await Effect.runPromise(
+			Effect.provide(
+				get(`${GITHUB_API}/repos/${owner}/${repo}/tags?per_page=100`, {
+					headers: this.headers,
+					schema: TagsResponse,
+				}),
+				FetchHttpClient.layer,
+			),
+		);
+		return result.map((tag) => ({ name: tag.name, sha: tag.commit.sha }));
+	}
+
+	async compareCommits(
+		owner: string,
+		repo: string,
+		base: string,
+		head: string,
+	): Promise<CommitInfo[]> {
+		const CompareResponse = Schema.Struct({
+			commits: Schema.Array(GitHubCommit),
+		});
+		const result = await Effect.runPromise(
+			Effect.provide(
+				get(
+					`${GITHUB_API}/repos/${owner}/${repo}/compare/${encodeURIComponent(base)}...${encodeURIComponent(head)}`,
+					{ headers: this.headers, schema: CompareResponse },
+				),
+				FetchHttpClient.layer,
+			),
+		);
+		return result.commits.map(normalizeCommit);
+	}
+
+	async listCommits(
+		owner: string,
+		repo: string,
+		ref: string,
+		perPage = 100,
+	): Promise<CommitInfo[]> {
+		const CommitsResponse = Schema.Array(GitHubCommit);
+		const result = await Effect.runPromise(
+			Effect.provide(
+				get(
+					`${GITHUB_API}/repos/${owner}/${repo}/commits?sha=${encodeURIComponent(ref)}&per_page=${perPage}`,
+					{ headers: this.headers, schema: CommitsResponse },
+				),
+				FetchHttpClient.layer,
+			),
+		);
+		return result.map(normalizeCommit);
 	}
 }
