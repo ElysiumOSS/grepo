@@ -40,19 +40,24 @@ export async function fetchRepositoryContent(
 	token?: string,
 	maxFileSize: string = "1118",
 ): Promise<Schema.Schema.Type<typeof GitIngestResponse>> {
+	// Privacy: do NOT forward the GitHub token to the third-party gitingest.com
+	// service by default. gitingest only needs a token for PRIVATE repos; sending
+	// it unconditionally leaked a (possibly write-scoped) PAT to a third party on
+	// every call. Public repos — the common case — need no token. To ingest a
+	// private repo via gitingest you must explicitly opt in with
+	// GITINGEST_SHARE_TOKEN=1 (and accept that your token + private source leave
+	// your machine); otherwise prefer the local content path (localFileContent).
+	const shareToken = process.env.GITINGEST_SHARE_TOKEN === "1";
+	const body = {
+		input_text: repoUrl,
+		max_file_size: maxFileSize,
+		pattern: "",
+		pattern_type: "exclude",
+		...(shareToken && token ? { token } : {}),
+	};
 	return Effect.runPromise(
 		Effect.provide(
-			post(
-				GITINGEST_API,
-				{
-					input_text: repoUrl,
-					max_file_size: maxFileSize,
-					pattern: "",
-					pattern_type: "exclude",
-					token: token ?? "",
-				},
-				{ schema: GitIngestResponse },
-			),
+			post(GITINGEST_API, body, { schema: GitIngestResponse }),
 			FetchHttpClient.layer,
 		),
 	);
