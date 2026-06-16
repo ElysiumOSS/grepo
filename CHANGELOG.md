@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.5.0](https://github.com/ElysiumOSS/grepo/compare/0.4.2...0.5.0) (2026-06-16)
+
+### Features
+
+* **cli:** add gitingest-free changelog command ([dccddd4](https://github.com/ElysiumOSS/grepo/commit/dccddd4969b31614d4d712dd997039bca4d0685f))
+
+### Bug Fixes
+
+* **changelog:** avoid polynomial ReDoS in conventional-commit regex ([2e860a3](https://github.com/ElysiumOSS/grepo/commit/2e860a38935c95594391c1a07c7205e813c77575))
+
 ## [0.4.2](https://github.com/ElysiumOSS/grepo/compare/0.4.1...0.4.2) (2026-06-16)
 
 ### Bug Fixes
