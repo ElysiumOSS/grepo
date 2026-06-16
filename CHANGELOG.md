@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.2](https://github.com/ElysiumOSS/grepo/compare/0.4.1...0.4.2) (2026-06-16)
+
+### Bug Fixes
+
+* **deps:** bump vitest to 3.2.6 (GHSA-5xrq-8626-4rwp) ([16b23bf](https://github.com/ElysiumOSS/grepo/commit/16b23bfd4062a9c6936a5169cfdbddf2715a5777))
+* stop leaking GitHub token to gitingest.com; pin mmdc; add local-content path ([adcea52](https://github.com/ElysiumOSS/grepo/commit/adcea520590427161eb9cf7566bac09bd5b56c17))
+
 ## [0.4.0](https://github.com/ElysiumOSS/grepo/compare/0.3.0...0.4.0) (2026-03-17)
 
 ### Features
