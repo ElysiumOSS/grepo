@@ -38,8 +38,11 @@ export interface ParsedCommit {
 	subject: string;
 }
 
+// Note: capture the subject as `.*` directly after the colon (no leading `\s*`)
+// and trim it in code. A `\s*` followed by `.+` both match spaces, which CodeQL
+// flags as polynomial ReDoS (js/polynomial-redos) on untrusted commit messages.
 const CONVENTIONAL_RE =
-	/^(?<type>\w+)(?:\((?<scope>[^)]+)\))?(?<breaking>!)?:\s*(?<subject>.+)$/;
+	/^(?<type>\w+)(?:\((?<scope>[^)]+)\))?(?<breaking>!)?:(?<subject>.*)$/;
 
 const SECTIONS: ReadonlyArray<{ type: string; title: string }> = [
 	{ title: "Features", type: "feat" },
